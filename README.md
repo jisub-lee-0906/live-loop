@@ -54,9 +54,30 @@ The first sample is treated as cold latency because it may include lazy model lo
 
 If local LLM mode is enabled in the frontend, call `/api/llm/prewarm` after backend startup or during an explicit splash/loading step. Prewarm can take several seconds on CPU, so it should never block Tone.js transport or a live bar transition.
 
+## One-command development runtime
+
+Start or verify the local performance stack with one command:
+
+```bash
+cd /home/jisub-lee/workspace/live-loop
+scripts/start-dev-runtime.py --prewarm
+```
+
+Useful modes:
+
+```bash
+# Verify already-running backend/frontend and prewarm local AI paths.
+scripts/start-dev-runtime.py --check-only --prewarm
+
+# Start missing servers, verify readiness, then exit instead of staying attached.
+scripts/start-dev-runtime.py --no-wait
+```
+
+The launcher checks backend `8101`, frontend `5173`, `/api/health`, `/api/stt/status`, `/api/model/status`, and frontend `/`. It also points to `docs/qa/golden-performance-flow.md` for manual QA.
+
 ## Backend development
 
-Run the API:
+Run only the API:
 
 ```bash
 cd /home/jisub-lee/workspace/live-loop
