@@ -96,6 +96,14 @@ From a fresh page:
 - No dashboard-first UI as the primary performance surface.
 - No unbounded audio parameters, unsafe volume jumps, or unvalidated sample/effect loading.
 
+## Finished product path
+
+Canonical productization references:
+
+- `docs/finished-product-roadmap.md` — product identity, finished-product gates, sound identity, and release path.
+- `docs/production-readiness-audit.md` — current implementation audit against the architecture spine.
+- `docs/qa/golden-performance-flow.md` — manual QA script for text and PTT performance passes.
+
 ## Growth model
 
 After MVP, grow the verified capability/DSL system iteratively. Do not grow by adding more fixed phrase -> preset mappings as the main creative path.
