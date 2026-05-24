@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "spike:tone": "vite spikes/tonejs-live-loop-mastery --host 0.0.0.0"
   },
   "dependencies": {
     "butterchurn": "^2.6.7",

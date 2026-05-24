@@ -1,4 +1,4 @@
-export type Quantization = 'immediate' | 'next_bar' | 'next_2bar' | 'next_4bar'
+export type Quantization = 'immediate' | 'next_bar' | 'next_2bar' | 'next_4bar' | 'next_phrase'
 
 export interface TransportPosition {
   bpm: number
@@ -14,6 +14,7 @@ export interface ScheduleDecision {
   applyAtBar: number
   applyInMs: number
   phraseBars: number
+  barsUntilApply: number
   reason: string
 }
 
@@ -25,7 +26,20 @@ export function barDurationMs(bpm: number, beatsPerBar = DEFAULT_BEATS_PER_BAR):
 
 export function classifyQuantization(text: string): Quantization {
   const normalized = text.toLowerCase()
-  if (normalized.includes('멈춰') || normalized.includes('정지') || normalized.includes('꺼') || normalized.includes('빼') || normalized.includes('mute')) {
+  if (
+    normalized.includes('panic') ||
+    normalized.includes('패닉') ||
+    normalized.includes('비상') ||
+    normalized.includes('kill') ||
+    normalized.includes('킬') ||
+    normalized.includes('멈춰') ||
+    normalized.includes('정지') ||
+    normalized.includes('stop') ||
+    normalized.includes('스탑')
+  ) {
+    return 'immediate'
+  }
+  if (normalized.includes('꺼') || normalized.includes('빼') || normalized.includes('mute')) {
     return 'next_bar'
   }
   if (
@@ -44,7 +58,7 @@ export function classifyQuantization(text: string): Quantization {
     return 'next_4bar'
   }
   if (normalized.includes('얹') || normalized.includes('추가') || normalized.includes('깔') || normalized.includes('넣')) {
-    return 'next_2bar'
+    return 'next_bar'
   }
   return 'next_4bar'
 }
@@ -58,7 +72,7 @@ function phraseBarsFor(quantization: Quantization): number {
 
 function nextPhraseStartBar(currentBar: number, phraseBars: number): number {
   if (phraseBars <= 1) return currentBar + 1
-  return Math.ceil((currentBar + 1) / phraseBars) * phraseBars + 1
+  return Math.floor((currentBar - 1) / phraseBars) * phraseBars + phraseBars + 1
 }
 
 export function computeScheduleDecision(
@@ -68,7 +82,7 @@ export function computeScheduleDecision(
 ): ScheduleDecision {
   const quantization = !position.isPlaying ? 'immediate' : options.forceQuantization ?? classifyQuantization(text)
   if (quantization === 'immediate') {
-    return { quantization, applyAtBar: position.bar, applyInMs: 0, phraseBars: 0, reason: 'transport_stopped' }
+    return { quantization, applyAtBar: position.bar, applyInMs: 0, phraseBars: 0, barsUntilApply: 0, reason: 'transport_stopped' }
   }
 
   const phraseBars = phraseBarsFor(quantization)
@@ -91,11 +105,13 @@ export function computeScheduleDecision(
     applyAtBar,
     applyInMs: Math.round(applyInMs),
     phraseBars,
+    barsUntilApply: Math.max(0, applyAtBar - position.bar),
     reason: `${quantization}_boundary`,
   }
 }
 
 export function describeSchedule(decision: ScheduleDecision): string {
   if (decision.quantization === 'immediate') return '바로 들어갑니다'
-  return `${decision.applyAtBar}마디에 들어갑니다`
+  const bars = Math.max(1, decision.barsUntilApply)
+  return bars === 1 ? '다음 마디에 들어갑니다' : `${bars}마디 뒤에 들어갑니다`
 }

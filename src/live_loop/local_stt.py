@@ -13,6 +13,12 @@ DEFAULT_STT_MODEL = "small"
 DEFAULT_STT_LANGUAGE = "ko"
 DEFAULT_STT_DEVICE = "cpu"
 DEFAULT_STT_COMPUTE_TYPE = "int8"
+DEFAULT_STT_BEAM_SIZE = 5
+DEFAULT_STT_INITIAL_PROMPT = (
+    "라이브 루프스테이션 한국어 짧은 음성 명령. "
+    "가능한 명령: 킥 깔아줘, 하이햇 얹어줘, 베이스 넣어줘, 패드 넓게 깔아줘, "
+    "드럼 더 몰아줘, 베이스 빼줘, 다시 드랍, 스윙 0.7, bpm 150, 멈춰."
+)
 
 
 @dataclass(frozen=True)
@@ -22,6 +28,8 @@ class LocalSttStatus:
     language: str
     device: str
     compute_type: str
+    beam_size: int
+    has_initial_prompt: bool
     runtime_available: bool
     ready: bool
 
@@ -56,6 +64,18 @@ def get_stt_compute_type() -> str:
     return _env("LIVE_LOOP_STT_COMPUTE_TYPE", DEFAULT_STT_COMPUTE_TYPE)
 
 
+def get_stt_beam_size() -> int:
+    raw = _env("LIVE_LOOP_STT_BEAM_SIZE", str(DEFAULT_STT_BEAM_SIZE))
+    try:
+        return max(1, min(8, int(raw)))
+    except ValueError:
+        return DEFAULT_STT_BEAM_SIZE
+
+
+def get_stt_initial_prompt() -> str:
+    return _env("LIVE_LOOP_STT_INITIAL_PROMPT", DEFAULT_STT_INITIAL_PROMPT)
+
+
 def _runtime_available() -> bool:
     try:
         import faster_whisper  # noqa: F401
@@ -72,9 +92,52 @@ def get_local_stt_status() -> LocalSttStatus:
         language=get_stt_language(),
         device=get_stt_device(),
         compute_type=get_stt_compute_type(),
+        beam_size=get_stt_beam_size(),
+        has_initial_prompt=bool(get_stt_initial_prompt()),
         runtime_available=runtime_available,
         ready=runtime_available,
     )
+
+
+LIVE_COMMAND_KEYWORDS = (
+    "킥",
+    "kick",
+    "하이햇",
+    "햇",
+    "hat",
+    "스네어",
+    "snare",
+    "베이스",
+    "bass",
+    "패드",
+    "pad",
+    "드럼",
+    "drum",
+    "스윙",
+    "swing",
+    "bpm",
+    "템포",
+    "드랍",
+    "drop",
+    "멈춰",
+    "정지",
+    "panic",
+    "전체",
+    "어둡",
+    "밝",
+    "리버브",
+    "볼륨",
+    "릴리즈",
+    "어택",
+    "크게",
+    "작게",
+    "다시",
+)
+
+
+def _looks_like_live_command(text: str) -> bool:
+    normalized = text.lower().replace(" ", "")
+    return any(keyword.lower().replace(" ", "") in normalized for keyword in LIVE_COMMAND_KEYWORDS)
 
 
 class LocalSpeechTranscriber:
@@ -106,8 +169,23 @@ class LocalSpeechTranscriber:
             raise RuntimeError("faster-whisper runtime is not available")
         start = time.perf_counter()
         model = self._load_model()
-        segments, info = model.transcribe(str(path), language=language or get_stt_language() or None, beam_size=1, vad_filter=True)
-        text = " ".join(segment.text.strip() for segment in segments if segment.text.strip()).strip()
+        transcribe_options = {
+            "language": language or get_stt_language() or None,
+            "beam_size": get_stt_beam_size(),
+            "initial_prompt": get_stt_initial_prompt() or None,
+            "condition_on_previous_text": False,
+            "temperature": 0.0,
+        }
+        first_segments, info = model.transcribe(str(path), vad_filter=True, **transcribe_options)
+        text = " ".join(segment.text.strip() for segment in first_segments if segment.text.strip()).strip()
+        if not text or not _looks_like_live_command(text):
+            retry_segments, retry_info = model.transcribe(str(path), vad_filter=False, **transcribe_options)
+            retry_text = " ".join(segment.text.strip() for segment in retry_segments if segment.text.strip()).strip()
+            if retry_text and _looks_like_live_command(retry_text):
+                text = retry_text
+                info = retry_info
+            elif text and not _looks_like_live_command(text):
+                text = ""
         latency_ms = round((time.perf_counter() - start) * 1000)
         return SttTranscript(
             text=text,

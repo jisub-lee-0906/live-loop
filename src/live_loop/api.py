@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from time import perf_counter
 
 from pathlib import Path
 
@@ -9,13 +10,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from .actions import MusicAction, parse_fast_command
+from .arrangement_plan import ArrangementPlan, compose_rule_arrangement_plan
 from .live_intent import LiveCodeIntent, compose_rule_intent
 from .local_llm import LocalLiveCoder, LocalModelStatus, get_local_model_status
 from .local_stt import LocalSttStatus, SttTranscript, get_local_stt_status, get_local_transcriber
+from .tone_knowledge import ToneKnowledgeSearchResult, search_tone_knowledge
 
 
 class CommandRequest(BaseModel):
     text: str = Field(min_length=1, max_length=500)
+
+
+class ArrangeRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=1000)
+    loop_state: dict[str, object] | None = None
 
 
 class CommandResponse(BaseModel):
@@ -33,6 +41,26 @@ class IntentResponse(BaseModel):
     ok: bool
     intent: LiveCodeIntent
     source: str
+
+
+class ArrangementPlanResponse(BaseModel):
+    ok: bool
+    plan: ArrangementPlan
+    source: str
+
+
+class ToneKnowledgeResponse(BaseModel):
+    ok: bool
+    query: str
+    results: list[ToneKnowledgeSearchResult]
+
+
+class LlmPrewarmResponse(BaseModel):
+    ok: bool
+    ready: bool
+    source: str
+    latency_ms: int
+    message: str | None = None
 
 
 class SttStatusResponse(BaseModel):
@@ -96,6 +124,19 @@ def interpret_command(request: CommandRequest) -> CommandResponse:
     return CommandResponse(ok=True, action=action)
 
 
+@app.get("/api/tone-knowledge/search", response_model=ToneKnowledgeResponse)
+def search_tone_docs(q: str, limit: int = 3) -> ToneKnowledgeResponse:
+    return ToneKnowledgeResponse(ok=True, query=q, results=search_tone_knowledge(q, limit=limit))
+
+
+@app.post("/api/llm/arrange", response_model=ArrangementPlanResponse)
+def arrange_command(request: ArrangeRequest) -> ArrangementPlanResponse:
+    # First pivot step: route natural language through retrieved Tone.js knowledge
+    # into a validated declarative plan. When the local model planner is wired,
+    # it should emit the same ArrangementPlan shape and still never raw JS.
+    return ArrangementPlanResponse(ok=True, plan=compose_rule_arrangement_plan(request.text, request.loop_state), source="rules-with-tone-knowledge")
+
+
 @app.post("/api/llm/intent", response_model=IntentResponse)
 def interpret_intent(request: CommandRequest) -> IntentResponse:
     coder = get_local_coder()
@@ -105,3 +146,18 @@ def interpret_intent(request: CommandRequest) -> IntentResponse:
         return IntentResponse(ok=True, intent=coder.interpret_intent(request.text), source="local-gguf")
     except Exception:
         return IntentResponse(ok=True, intent=compose_rule_intent(request.text), source="rules-fallback")
+
+
+@app.post("/api/llm/prewarm", response_model=LlmPrewarmResponse)
+def prewarm_llm(prompt: str = "킥 깔아줘") -> LlmPrewarmResponse:
+    coder = get_local_coder()
+    if not coder.ready():
+        return LlmPrewarmResponse(ok=True, ready=False, source="not-ready", latency_ms=0, message="local LLM is not ready")
+    start = perf_counter()
+    try:
+        coder.interpret_intent(prompt)
+    except Exception as exc:  # noqa: BLE001 - prewarm reports model failures to the caller.
+        latency_ms = round((perf_counter() - start) * 1000)
+        return LlmPrewarmResponse(ok=False, ready=True, source="local-gguf", latency_ms=latency_ms, message=str(exc))
+    latency_ms = round((perf_counter() - start) * 1000)
+    return LlmPrewarmResponse(ok=True, ready=True, source="local-gguf", latency_ms=latency_ms)

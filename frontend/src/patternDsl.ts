@@ -1,5 +1,5 @@
-export type PatternLayerId = 'drums' | 'bass' | 'pad'
-export type PatternVoice = 'kick' | 'snare' | 'hat' | 'bass' | 'pad'
+export type PatternLayerId = 'drums' | 'bass' | 'pad' | 'lead' | 'texture' | 'fx'
+export type PatternVoice = 'kick' | 'snare' | 'hat' | 'bass' | 'pad' | 'lead' | 'texture' | 'fx'
 export type NoteLength = '16n' | '8n' | '4n' | '2n' | '1m'
 
 export interface PatternEvent {
@@ -10,6 +10,18 @@ export interface PatternEvent {
   length?: NoteLength
 }
 
+export type AutomationParameter = 'filterCutoff' | 'reverbWet' | 'delayWet' | 'volume' | 'gate'
+export type AutomationShape = 'linear' | 'exponential' | 'rising' | 'falling' | 'pulse'
+
+export interface AutomationCurve {
+  parameter: AutomationParameter
+  start_step: number
+  end_step: number
+  start_value: number
+  end_value: number
+  shape: AutomationShape
+}
+
 export interface PatternLayer {
   id: PatternLayerId
   label: string
@@ -17,6 +29,7 @@ export interface PatternLayer {
   swing: number
   sound: string
   events: PatternEvent[]
+  automation?: AutomationCurve[]
 }
 
 export interface LiveCodePattern {
@@ -30,7 +43,7 @@ export interface LiveCodePattern {
 
 export interface LiveCodeIntent {
   style: 'house' | 'uk_garage' | 'techno' | 'ambient'
-  targets: Array<'drums' | 'bass' | 'pad' | 'mix'>
+  targets: Array<'drums' | 'bass' | 'pad' | 'lead' | 'texture' | 'fx' | 'mix'>
   constraints: string[]
   timing: 'now' | 'next_step' | 'next_bar'
   confidence: number
@@ -82,6 +95,30 @@ export function createHousePattern(): LiveCodePattern {
         sound: 'wide_minor_pad',
         events: [event(0, 'pad', 0.34, 'Cm7', '1m')],
       },
+      lead: {
+        id: 'lead',
+        label: 'Lead',
+        steps: 16,
+        swing: 0.5,
+        sound: 'sparkle_arp',
+        events: [event(1, 'lead', 0.32, 'G4', '16n'), event(5, 'lead', 0.28, 'Bb4', '16n'), event(9, 'lead', 0.34, 'D5', '16n'), event(13, 'lead', 0.25, 'Eb5', '16n')],
+      },
+      texture: {
+        id: 'texture',
+        label: 'Texture',
+        steps: 16,
+        swing: 0.5,
+        sound: 'vinyl_air',
+        events: [event(0, 'texture', 0.28, undefined, '2n'), event(8, 'texture', 0.2, undefined, '2n')],
+      },
+      fx: {
+        id: 'fx',
+        label: 'FX',
+        steps: 16,
+        swing: 0.5,
+        sound: 'transition_fx',
+        events: [event(0, 'fx', 0.54, undefined, '4n'), event(12, 'fx', 0.24, undefined, '16n'), event(13, 'fx', 0.18, undefined, '16n'), event(14, 'fx', 0.34, undefined, '16n'), event(15, 'fx', 0.42, undefined, '16n')],
+      },
     },
   }
 }
@@ -127,6 +164,30 @@ export function createUkGaragePattern(): LiveCodePattern {
         sound: 'filtered_chord_stab',
         events: [event(0, 'pad', 0.28, 'Cm9', '1m')],
       },
+      lead: {
+        id: 'lead',
+        label: 'Lead',
+        steps: 16,
+        swing: 0.59,
+        sound: 'syncopated_sparkle_arp',
+        events: [event(3, 'lead', 0.3, 'G4', '16n'), event(6, 'lead', 0.24, 'C5', '16n'), event(10, 'lead', 0.34, 'D5', '16n'), event(15, 'lead', 0.26, 'Bb4', '16n')],
+      },
+      texture: {
+        id: 'texture',
+        label: 'Texture',
+        steps: 16,
+        swing: 0.59,
+        sound: 'vinyl_air',
+        events: [event(0, 'texture', 0.24, undefined, '2n'), event(8, 'texture', 0.18, undefined, '2n')],
+      },
+      fx: {
+        id: 'fx',
+        label: 'FX',
+        steps: 16,
+        swing: 0.59,
+        sound: 'riser_sweep',
+        events: [event(15, 'fx', 0.46, undefined, '16n')],
+      },
     },
   }
 }
@@ -147,7 +208,7 @@ export function patternToLiveCode(pattern: LiveCodePattern): string {
     lines.push(`    sound "${layer.sound}"`)
     lines.push(`    steps ${layer.steps}`)
     lines.push(`    swing ${layer.swing}`)
-    for (const voice of ['kick', 'snare', 'hat', 'bass', 'pad'] as PatternVoice[]) {
+    for (const voice of ['kick', 'snare', 'hat', 'bass', 'pad', 'lead', 'texture', 'fx'] as PatternVoice[]) {
       const code = eventListToCode(layer, voice)
       if (code) lines.push(code)
     }

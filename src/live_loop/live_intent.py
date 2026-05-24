@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 Style = Literal["house", "uk_garage", "techno", "ambient"]
-Target = Literal["drums", "bass", "pad", "mix"]
+Target = Literal["drums", "bass", "pad", "lead", "texture", "fx", "mix"]
 Timing = Literal["now", "next_step", "next_bar"]
 
 KNOWN_CONSTRAINTS = {
@@ -17,6 +17,12 @@ KNOWN_CONSTRAINTS = {
     "tight_kick",
     "ghost_snare",
     "wide_pad",
+    "sparkle_arp",
+    "vinyl_air",
+    "riser_sweep",
+    "drop_impact",
+    "delay_throw",
+    "stutter_gate",
     "minimal",
     "busy",
 }
@@ -52,11 +58,29 @@ def compose_rule_intent(text: str) -> LiveCodeIntent:
         constraints.append("offbeat_bass")
     if any(token in lower for token in ["패드", "pad", "공간", "몽환"]):
         constraints.append("wide_pad")
+    if any(token in lower for token in ["리드", "멜로디", "아르페지오", "반짝", "lead", "arp", "sparkle"]):
+        constraints.append("sparkle_arp")
+    if any(token in lower for token in ["텍스처", "질감", "공기", "노이즈", "texture", "atmosphere", "vinyl"]):
+        constraints.append("vinyl_air")
+    if any(token in lower for token in ["임팩트", "impact", "쾅"]):
+        constraints.append("drop_impact")
+    if any(token in lower for token in ["딜레이", "delay", "던져", "throw"]):
+        constraints.append("delay_throw")
+    if any(token in lower for token in ["스터터", "stutter", "게이트", "gate", "잘라"]):
+        constraints.append("stutter_gate")
+    if any(token in lower for token in ["fx", "효과", "전환", "빌드업", "라이저", "riser", "스윕", "sweep"]):
+        constraints.append("riser_sweep")
     if any(token in lower for token in ["쪼개", "busy", "복잡", "몰아"]):
         constraints.append("busy")
     targets: list[Target] = ["drums", "bass"]
     if "wide_pad" in constraints:
         targets.append("pad")
+    if "sparkle_arp" in constraints:
+        targets.append("lead")
+    if "vinyl_air" in constraints:
+        targets.append("texture")
+    if any(item in constraints for item in ["riser_sweep", "drop_impact", "delay_throw", "stutter_gate"]):
+        targets.append("fx")
     return LiveCodeIntent(style=style, targets=targets, constraints=constraints, timing="next_bar", confidence=0.72)
 
 

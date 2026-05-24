@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tone.js Live-loop Mastery Spike</title>
+    <style>
+      body { margin: 0; background: #08090d; color: #e8ecff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      main { max-width: 980px; margin: 0 auto; padding: 24px; }
+      button { margin: 4px; padding: 10px 12px; border: 1px solid #39405c; background: #15192a; color: #e8ecff; border-radius: 8px; cursor: pointer; }
+      button:hover { background: #202743; }
+      canvas { width: 100%; height: 160px; background: #05060a; border: 1px solid #252a3c; border-radius: 10px; margin-top: 16px; }
+      pre { white-space: pre-wrap; background: #05060a; border: 1px solid #252a3c; border-radius: 10px; padding: 12px; min-height: 220px; }
+      .row { margin: 12px 0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Tone.js Live-loop Mastery Spike</h1>
+      <p>Production이 아닌 throwaway 실험 페이지. 버튼을 눌러 Tone.js timing/audio behavior를 직접 확인한다.</p>
+      <div class="row">
+        <button id="unlock">UNLOCK AUDIO</button>
+        <button id="start-empty">START EMPTY TRANSPORT</button>
+        <button id="stop">STOP</button>
+        <button id="panic">PANIC</button>
+      </div>
+      <div class="row">
+        <button id="kick-next-bar">Schedule kick next bar</button>
+        <button id="bass-ramp">Bass cutoff ramp</button>
+        <button id="pad-space">Pad reverb/filter ramp</button>
+        <button id="part-fill">One-bar Part fill</button>
+        <button id="sequence-hats">Sequence hats 2 bars</button>
+      </div>
+      <canvas id="scope" width="960" height="160"></canvas>
+      <h2>Log</h2>
+      <pre id="log"></pre>
+      <script type="module" src="/src/main.ts"></script>
+    </main>
+  </body>
+</html>

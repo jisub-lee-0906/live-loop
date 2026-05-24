@@ -96,6 +96,12 @@ export function Visualizer({ audioNode, active, presetIndex }: VisualizerProps) 
     const canvas = canvasRef.current
     const visualizer = visualizerRef.current
     if (!canvas || !visualizer || fallback) return undefined
+    if (!active) {
+      resizeCanvas(canvas, visualizer)
+      const context = canvas.getContext('2d')
+      context?.clearRect(0, 0, canvas.width, canvas.height)
+      return undefined
+    }
     let frame = 0
     const render = () => {
       resizeCanvas(canvas, visualizer)
@@ -104,7 +110,7 @@ export function Visualizer({ audioNode, active, presetIndex }: VisualizerProps) 
     }
     frame = requestAnimationFrame(render)
     return () => cancelAnimationFrame(frame)
-  }, [fallback])
+  }, [active, fallback])
 
   useEffect(() => {
     if (!fallback) return undefined
@@ -134,6 +140,7 @@ export function Visualizer({ audioNode, active, presetIndex }: VisualizerProps) 
         context.fill()
       }
       context.globalCompositeOperation = 'source-over'
+      if (!active) return
       frame = requestAnimationFrame(draw)
     }
     frame = requestAnimationFrame(draw)
