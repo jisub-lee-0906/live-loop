@@ -473,6 +473,10 @@ function App() {
               <dd>{debugPlanSummary.preserve}</dd>
             </div>
             <div>
+              <dt>intent</dt>
+              <dd>{debugPlanSummary.intent}</dd>
+            </div>
+            <div>
               <dt>pending</dt>
               <dd>{debugPlanSummary.pending}</dd>
             </div>

@@ -90,11 +90,44 @@ describe('loop command state', () => {
   it('undo restores the previous loop snapshot', () => {
     const initial = createInitialLoopState()
     const withKick = applyCommand(initial, '킥 깔아줘')
-    const undone = applyCommand(withKick, 'undo')
+    const withWithhold = applyCommand(withKick, '아직 터뜨리지 마')
+    const undone = applyCommand(withWithhold, 'undo')
 
     expect(withKick.layers.kick.enabled).toBe(true)
-    expect(undone.layers.kick.enabled).toBe(false)
+    expect(withWithhold.musicalIntent.promise).toBeGreaterThan(withKick.musicalIntent.promise)
+    expect(undone.layers.kick.enabled).toBe(true)
+    expect(undone.musicalIntent).toEqual(withKick.musicalIntent)
     expect(undone.commandLog[0]?.action).toBe('undo')
+  })
+
+  it('routes musical intent gestures through role-based ensemble patches', () => {
+    const withWithhold = applyCommand(createInitialLoopState(), '아직 터뜨리지 말고 숨 참아')
+    const released = applyCommand(withWithhold, '이제 터뜨려')
+    const carved = applyCommand(released, '비워')
+
+    expect(withWithhold.commandLog[0]).toMatchObject({ action: 'music_patch', target: 'texture' })
+    expect(withWithhold.musicalIntent.tension).toBeGreaterThan(0)
+    expect(withWithhold.musicalIntent.promise).toBeGreaterThan(0)
+    expect(withWithhold.layers.fx.enabled).toBe(true)
+    expect(withWithhold.layers.texture.enabled).toBe(true)
+    expect(withWithhold.pendingPatch?.timing).toBe('next_phrase')
+    expect(released.commandLog[0]).toMatchObject({ action: 'music_patch', target: 'fx' })
+    expect(released.musicalIntent.focus).toBe('fx')
+    expect(released.musicalIntent.promise).toBeLessThan(withWithhold.musicalIntent.promise)
+    expect(released.layers.fx.macros?.preset).toBe('drop_impact')
+    expect(carved.musicalIntent.space).toBeGreaterThan(released.musicalIntent.space)
+    expect(carved.layers.hats.volume).toBe(0.28)
+    expect(carved.layers.lead.enabled).toBe(false)
+  })
+
+  it('records motif memory and recall as stateful musical intents even before note memory exists', () => {
+    const remembered = applyCommand(createInitialLoopState(), '방금 베이스 기억해')
+    const recalled = applyCommand(remembered, '아까 그 느낌 다시 불러')
+
+    expect(remembered.commandLog[0]).toMatchObject({ action: 'musical_intent' })
+    expect(remembered.musicalIntent.focus).toBe('bass')
+    expect(recalled.commandLog[0]).toMatchObject({ action: 'musical_intent' })
+    expect(recalled.history.at(-1)?.musicalIntent).toEqual(remembered.musicalIntent)
   })
 
   it('records unsupported commands as ignored log entries', () => {

@@ -53,6 +53,7 @@ export function snapshotLoopState(state: LoopState): LoopSnapshot {
     },
     pattern: state.pattern,
     liveCode: state.liveCode,
+    musicalIntent: { ...state.musicalIntent },
     pendingPatch: state.pendingPatch ? { ...state.pendingPatch } : undefined,
   }
 }

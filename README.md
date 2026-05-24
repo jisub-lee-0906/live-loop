@@ -1,8 +1,21 @@
 # live-loop
 
-Voice-controlled live loop / local AI performance instrument prototype.
+Free, open-source, local-first AI performance instrument prototype.
+
+`live-loop` is not an AI song generator and not a DAW replacement. It is a voice-directed live ensemble: the performer speaks musical intent, AI translates that intent into safe declarative music data, and the runtime performs only validated PatternDSL/MusicPlan changes at bar or phrase boundaries.
+
+The core project is intended to remain free. If it becomes useful in your music, performances, teaching, or research, voluntary sponsorship/donation is the preferred support model.
 
 Current direction: GUI/Tone.js-first. Sonic Pi remains an optional OSC prototype adapter, but the main product path is a fullscreen browser/desktop instrument with local audio, visualizer, push-to-talk STT, and local GGUF intent parsing.
+
+## Project principles
+
+- Local-first: microphone/STT/LLM workflows should work locally where practical.
+- Performer-led: AI interprets direction; it does not take over the performance.
+- Safe by design: no generated Tone.js/JS is executed in the live path.
+- Musical timing first: changes are scheduled to safe bar/phrase boundaries.
+- Hackable instrument: core code is MIT-licensed and intended for experimentation.
+- Donation-supported: core features should not be paywalled.
 
 ## What it does now
 
@@ -24,6 +37,19 @@ sonic_pi/               Optional Sonic Pi OSC prototype runtime
 docs/                   Architecture and packaging notes
 models/                 Local model slots and metadata; large model files stay out of git policy
 runtime/                Local runtime/download area; ignored
+```
+
+## License and support
+
+Code is released under the MIT License; see `LICENSE`.
+
+Important: bundled code, AI models, audio samples, and visual presets can have different licenses. Large or restricted models should stay out of git and keep their upstream license terms. See `docs/licensing-and-sustainability.md` for the project policy.
+
+Support model: free core project, optional donations/sponsorship later. Suggested message:
+
+```text
+This instrument is free because musical tools should be hackable, local, and accessible.
+If live-loop helps your music, performance, teaching, or research, please consider sponsoring development.
 ```
 
 ## Quick health check
@@ -180,10 +206,12 @@ Original phases:
 Current product path:
 
 1. Stabilize browser performance UX: fullscreen visualizer, PTT STT, local command scheduling.
-2. Measure STT and LLM cold/warm latency.
-3. Add startup/prewarm and better fallback behavior if needed.
-4. Add Tauri desktop shell with managed backend sidecar.
-5. Package sample assets, model downloader/installer, and one-click Windows runtime.
+2. Move beyond fixed presets with a Musical Intent State layer: energy, tension, density, space, promise, focus, and silence/withholding as first-class musical concepts.
+3. Add role-based ensemble reactions: drummer, bassist, lead, texture, FX, and silence generate validated MusicPlan/PatternDSL data.
+4. Add seeded variation and motif memory so “다른 느낌으로”, “방금 거 기억해”, and “다시 불러” feel musical but remain reproducible.
+5. Measure STT and LLM cold/warm latency, then add startup/prewarm and better fallback behavior if needed.
+6. Add Tauri desktop shell with managed backend sidecar.
+7. Package only license-clean sample assets, model downloader/installer, and one-click Windows runtime.
 
 ## Architectural decision
 

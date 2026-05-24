@@ -1,5 +1,13 @@
 import { applyMusicPatches, snapshotLoopState } from './musicPatch'
 import { applyLiveAction, type LiveAction } from './liveAction'
+import { ensemblePatchesFromIntent } from './ensembleIntent'
+import {
+  applyMusicalIntentDelta,
+  createDefaultMusicalIntentState,
+  interpretMusicalIntentCommand,
+  type MusicalIntentDelta,
+  type MusicalIntentState,
+} from './musicalIntent'
 import { selectDeterministicPatches } from './patchCatalog'
 import { createHousePattern, mockLiveCodeCommand, patternToLiveCode, type LiveCodePattern } from './patternDsl'
 import type { MusicPatchMacroValue, PendingMusicPatch } from './musicPatch'
@@ -40,6 +48,7 @@ export interface LoopSnapshot {
   layers: Record<LayerId, LoopLayer>
   pattern: LiveCodePattern
   liveCode: string
+  musicalIntent: MusicalIntentState
   pendingPatch?: PendingMusicPatch
 }
 
@@ -48,6 +57,7 @@ export interface LoopState {
   layers: Record<LayerId, LoopLayer>
   pattern: LiveCodePattern
   liveCode: string
+  musicalIntent: MusicalIntentState
   commandLog: CommandLogEntry[]
   pendingPatch?: PendingMusicPatch
   history: LoopSnapshot[]
@@ -76,6 +86,7 @@ export function createInitialLoopState(): LoopState {
     },
     pattern,
     liveCode: patternToLiveCode(pattern),
+    musicalIntent: createDefaultMusicalIntentState(),
     commandLog: [],
     history: [],
   }
@@ -118,6 +129,7 @@ function undoLast(state: LoopState, text: string): LoopState {
       layers: snapshot.layers,
       pattern: snapshot.pattern,
       liveCode: snapshot.liveCode,
+      musicalIntent: snapshot.musicalIntent,
       pendingPatch: undefined,
       history: state.history.slice(0, -1),
     },
@@ -216,6 +228,35 @@ function parseLiveParamAction(text: string): LiveAction | undefined {
   return undefined
 }
 
+function musicalIntentSummary(delta: MusicalIntentDelta): string {
+  if (delta.gesture === 'remember_motif') return '현재 음악적 방향을 모티프 기억 요청으로 보존했어요'
+  if (delta.gesture === 'recall_motif') return '이전 모티프를 다시 부르는 의도를 기록했어요'
+  return `${delta.gesture} 의도를 연주 상태에 반영했어요`
+}
+
+function applyMusicalIntent(state: LoopState, text: string, delta: MusicalIntentDelta): LoopState {
+  if (delta.gesture === 'unknown') return state
+  const nextIntent = applyMusicalIntentDelta(state.musicalIntent, delta)
+  const patches = ensemblePatchesFromIntent(delta)
+
+  if (patches.length) {
+    const patched = applyMusicPatches(state, patches, text)
+    if (patched.commandLog[0]?.action !== 'music_patch') return patched
+    return { ...patched, musicalIntent: nextIntent }
+  }
+
+  return withLog(
+    {
+      ...withHistory(state),
+      musicalIntent: nextIntent,
+      pendingPatch: undefined,
+    },
+    text,
+    'musical_intent',
+    musicalIntentSummary(delta),
+  )
+}
+
 export function applyCommand(state: LoopState, rawText: string): LoopState {
   const text = rawText.trim()
   const normalized = text.toLowerCase()
@@ -235,7 +276,7 @@ export function applyCommand(state: LoopState, rawText: string): LoopState {
       (acc, layerId) => setLayer(acc, layerId as LayerId, { enabled: false }),
       current,
     )
-    return withLog({ ...next, pendingPatch: undefined }, text, 'panic', '비상 정지: 모든 소리를 즉시 차단했어요')
+    return withLog({ ...next, musicalIntent: createDefaultMusicalIntentState(), pendingPatch: undefined }, text, 'panic', '비상 정지: 모든 소리를 즉시 차단했어요')
   }
 
   if (normalized.includes('멈춰') || normalized.includes('정지') || normalized.includes('stop') || normalized.includes('스탑')) {
@@ -258,8 +299,15 @@ export function applyCommand(state: LoopState, rawText: string): LoopState {
     return patchPattern(state, text)
   }
 
+  const memoryIntent = interpretMusicalIntentCommand(text)
+  if (memoryIntent.gesture === 'remember_motif' || memoryIntent.gesture === 'recall_motif') return applyMusicalIntent(state, text, memoryIntent)
+
   const deterministicPatches = selectDeterministicPatches(text)
   if (deterministicPatches.length) return applyMusicPatches(state, deterministicPatches, text)
+
+  const intent = interpretMusicalIntentCommand(text)
+  const intentState = applyMusicalIntent(state, text, intent)
+  if (intentState !== state) return intentState
 
   return withLog({ ...state, pendingPatch: undefined }, text, 'ignored', '아직 live coder가 이해하지 못한 명령이에요')
 }

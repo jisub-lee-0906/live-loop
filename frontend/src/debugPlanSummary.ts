@@ -6,6 +6,7 @@ export interface DebugPlanSummary {
   source: string
   knowledge: string
   preserve: string
+  intent: string
   pending: string
   activeLayers: string
   pattern: string
@@ -27,6 +28,11 @@ function formatPending(state: LoopState): string {
   if (!state.pendingPatch) return 'none'
   const patch = state.pendingPatch
   return `${patch.label} → ${patch.target} @ ${patch.timing}`
+}
+
+function formatIntent(state: LoopState): string {
+  const intent = state.musicalIntent
+  return `E${formatNumber(intent.energy)} T${formatNumber(intent.tension)} D${formatNumber(intent.density)} S${formatNumber(intent.space)} P${formatNumber(intent.promise)} · ${intent.focus}`
 }
 
 function formatActiveLayers(state: LoopState): string {
@@ -85,6 +91,7 @@ export function createDebugPlanSummary(state: LoopState): DebugPlanSummary {
     source: formatPlanSource(latestCommand),
     knowledge: formatKnowledge(latestCommand),
     preserve: formatPreserve(latestCommand),
+    intent: formatIntent(state),
     pending: formatPending(state),
     activeLayers: formatActiveLayers(state),
     pattern: `${state.pattern.name} · ${state.bpm} BPM · ${state.pattern.key}`,
