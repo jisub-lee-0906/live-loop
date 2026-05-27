@@ -35,7 +35,7 @@ A user should be able to double-click the app, pass sound/mic/model readiness ch
 
 Minimum finished experience:
 
-1. App opens with no WSL/npm/uv/manual port work.
+1. App opens with no Linux-bridge/npm/uv/manual port work.
 2. Splash/readiness screen shows audio, mic, backend, STT, and local model state.
 3. Main performance surface starts as `EMPTY LOOP`.
 4. `SOUND CHECK` proves audio unlock/output routing with a short musical four-kick check.

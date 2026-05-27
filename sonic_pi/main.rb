@@ -4,7 +4,7 @@
 # 1. Open Sonic Pi on Windows.
 # 2. Preferences -> IO -> enable 'Receive Remote OSC' if needed.
 # 3. Paste this file into a Sonic Pi buffer and Run.
-# 4. From WSL project root, run commands like:
+# 4. From the project root, run commands like:
 #    uv run live-loop send kick
 #    uv run live-loop send hats
 #    uv run live-loop send bass

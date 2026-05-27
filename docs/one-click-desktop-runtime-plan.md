@@ -34,7 +34,7 @@ User sees only:
 4. Click Start or press push-to-talk.
 5. Say: "킥 깔아줘", "하이햇 얹어줘", "드럼 더 쪼개줘".
 
-No terminal, no WSL, no manual server start.
+No terminal, no Linux-bridge dependency, no manual server start.
 
 ## Runtime architecture
 
@@ -130,7 +130,7 @@ Acceptance:
 
 ## One-click constraints
 
-- No WSL requirement for end users.
+- No Linux-bridge requirement for end users.
 - No command prompt window left open.
 - Backend crashes should show a GUI error with restart button.
 - Audio engine starts only after user gesture due to browser/WebView audio policies.
