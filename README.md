@@ -55,7 +55,7 @@ If live-loop helps your music, performance, teaching, or research, please consid
 ## Quick health check
 
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 uv run live-loop doctor
 uv run live-loop doctor --json
 ```
@@ -70,7 +70,7 @@ The doctor command reports:
 Measure local GGUF cold/warm command latency before changing frontend timeouts:
 
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 uv run live-loop benchmark-llm
 uv run live-loop benchmark-llm --json
 uv run live-loop benchmark-llm --prompt "킥 깔아줘" --prompt "하이햇 셔플로 얹어줘"
@@ -85,7 +85,7 @@ If local LLM mode is enabled in the frontend, call `/api/llm/prewarm` after back
 Start or verify the local performance stack with one command:
 
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 scripts/start-dev-runtime.py --prewarm
 ```
 
@@ -106,7 +106,7 @@ The launcher checks backend `8101`, frontend `5173`, `/api/health`, `/api/stt/st
 Run only the API:
 
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 uv run live-loop-api
 ```
 
@@ -131,7 +131,7 @@ curl -sS -X POST http://127.0.0.1:8101/api/llm/intent \
 ## Frontend development
 
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm run dev
 ```
 
@@ -161,7 +161,7 @@ Performance controls:
 Run all current checks:
 
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 uv run pytest -q
 uv run ruff check .
 cd frontend

@@ -61,7 +61,7 @@ From a fresh page:
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 sed -n '1,220p' docs/product-definition.md
 ```
 
@@ -83,7 +83,7 @@ sed -n '1,220p' docs/product-definition.md
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 sed -n '1,260p' docs/tonejs-capability-audit.md
 ```
 
@@ -162,7 +162,7 @@ export type MusicPatch =
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm test -- --run src/music/musicPatch.test.ts
 ```
 
@@ -190,7 +190,7 @@ npm test -- --run src/music/musicPatch.test.ts
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm test -- --run src/music/instrumentCapabilities.test.ts
 ```
 
@@ -218,7 +218,7 @@ macros: Record<string, number>
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm test -- --run src/loopState.test.ts
 ```
 
@@ -265,7 +265,7 @@ npm test -- --run src/loopState.test.ts
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm test -- --run src/music/patchCatalog.test.ts
 ```
 
@@ -296,7 +296,7 @@ npm test -- --run src/music/patchCatalog.test.ts
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm test -- --run src/music/applyMusicPatch.test.ts
 ```
 
@@ -320,7 +320,7 @@ npm test -- --run src/music/applyMusicPatch.test.ts
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm test -- --run src/loopState.test.ts src/music/applyMusicPatch.test.ts
 ```
 
@@ -351,7 +351,7 @@ npm test -- --run src/loopState.test.ts src/music/applyMusicPatch.test.ts
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm test -- --run src/music/toneMacroMapping.test.ts
 ```
 
@@ -379,7 +379,7 @@ npm test -- --run src/music/toneMacroMapping.test.ts
 
 **Automated verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm test -- --run
 npm run build
 npm run lint
@@ -436,7 +436,7 @@ class PatchInterpretation(BaseModel):
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 uv run pytest tests/test_music_patch.py -q
 ```
 
@@ -482,7 +482,7 @@ uv run pytest tests/test_music_patch.py -q
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 uv run pytest tests/test_api.py tests/test_local_llm.py tests/test_music_patch.py -q
 curl -s -X POST http://127.0.0.1:8101/api/llm/patch \
   -H 'Content-Type: application/json' \
@@ -506,7 +506,7 @@ curl -s -X POST http://127.0.0.1:8101/api/llm/patch \
 
 **Verification:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm test -- --run
 npm run build
 npm run lint
@@ -522,10 +522,10 @@ npm run lint
 
 **Commands:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 uv run live-loop-api
 
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 VITE_LIVE_LOOP_ENABLE_TEXT_INPUT=1 \
 VITE_LIVE_LOOP_USE_LOCAL_LLM=1 \
 VITE_LIVE_LOOP_LLM_TIMEOUT_MS=12000 \
@@ -569,7 +569,7 @@ curl -s -I http://127.0.0.1:5173/
 
 **Commands:**
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 uv run pytest -q
 uv run ruff check .
 cd frontend
@@ -663,7 +663,7 @@ After MVP passes manual QA, grow the verified catalog iteratively.
 Run before claiming any implementation milestone:
 
 ```bash
-cd /home/jisub-lee/workspace/live-loop
+cd E:\workspace\live-loop
 uv run pytest -q
 uv run ruff check .
 cd frontend

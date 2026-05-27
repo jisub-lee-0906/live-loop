@@ -5,7 +5,7 @@ Throwaway browser spike for learning Tone.js behavior before changing production
 ## How to run
 
 ```bash
-cd /home/jisub-lee/workspace/live-loop/frontend
+cd E:\workspace\live-loop/frontend
 npm run spike:tone
 ```
 
