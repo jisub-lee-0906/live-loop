@@ -342,13 +342,17 @@ dependencies = [
     { name = "fastapi" },
     { name = "faster-whisper" },
     { name = "httpx" },
-    { name = "llama-cpp-python" },
     { name = "pydantic" },
     { name = "python-multipart" },
     { name = "python-osc" },
     { name = "rich" },
     { name = "typer" },
     { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.optional-dependencies]
+local-llm = [
+    { name = "llama-cpp-python" },
 ]
 
 [package.dev-dependencies]
@@ -362,7 +366,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.136.1" },
     { name = "faster-whisper", specifier = ">=1.2.1" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "llama-cpp-python", specifier = ">=0.3.23" },
+    { name = "llama-cpp-python", marker = "extra == 'local-llm'", specifier = ">=0.3.23" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "python-osc", specifier = ">=1.10.2" },
@@ -370,6 +374,7 @@ requires-dist = [
     { name = "typer", specifier = ">=0.25.1" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.47.0" },
 ]
+provides-extras = ["local-llm"]
 
 [package.metadata.requires-dev]
 dev = [
