@@ -7,7 +7,7 @@ from live_loop.local_stt import LocalSpeechTranscriber, SttTranscript
 
 
 def test_health_reports_ready():
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.get('/api/health')
 
@@ -18,7 +18,7 @@ def test_health_reports_ready():
 def test_model_status_reports_local_model_slot(monkeypatch, tmp_path):
     model = tmp_path / 'live-coder.gguf'
     monkeypatch.setenv('LIVE_LOOP_LLM_MODEL', str(model))
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.get('/api/model/status')
 
@@ -34,7 +34,7 @@ def test_stt_status_reports_faster_whisper_defaults(monkeypatch):
     monkeypatch.setenv('LIVE_LOOP_STT_MODEL', 'small')
     monkeypatch.setenv('LIVE_LOOP_STT_LANGUAGE', 'ko')
     monkeypatch.delenv('LIVE_LOOP_STT_BEAM_SIZE', raising=False)
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.get('/api/stt/status')
 
@@ -165,7 +165,7 @@ def test_stt_transcribe_endpoint_uses_cached_transcriber(monkeypatch):
     import live_loop.api as api
 
     monkeypatch.setattr(api, 'get_local_transcriber', lambda: FakeTranscriber())
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.post(
         '/api/stt/transcribe?language=ko',
@@ -180,7 +180,7 @@ def test_stt_transcribe_endpoint_uses_cached_transcriber(monkeypatch):
 
 
 def test_stt_transcribe_rejects_non_audio_upload():
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.post('/api/stt/transcribe', files={'file': ('note.txt', b'not-audio', 'text/plain')})
 
@@ -190,7 +190,7 @@ def test_stt_transcribe_rejects_non_audio_upload():
 def test_llm_intent_endpoint_falls_back_to_rules_when_model_missing(monkeypatch, tmp_path):
     model = tmp_path / 'missing.gguf'
     monkeypatch.setenv('LIVE_LOOP_LLM_MODEL', str(model))
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.post('/api/llm/intent', json={'text': 'UK garage 느낌으로 셔플 하이햇'})
 
@@ -217,7 +217,7 @@ def test_llm_prewarm_endpoint_loads_local_coder(monkeypatch):
 
     monkeypatch.setattr(api, 'get_local_coder', lambda: FakeCoder())
     monkeypatch.setattr(api, 'perf_counter', lambda: next(ticks))
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.post('/api/llm/prewarm')
 
@@ -241,7 +241,7 @@ def test_llm_prewarm_endpoint_skips_when_model_not_ready(monkeypatch):
     import live_loop.api as api
 
     monkeypatch.setattr(api, 'get_local_coder', lambda: MissingCoder())
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.post('/api/llm/prewarm')
 
@@ -254,7 +254,7 @@ def test_llm_prewarm_endpoint_skips_when_model_not_ready(monkeypatch):
 
 
 def test_command_endpoint_parses_korean_command():
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.post('/api/command', json={'text': '드럼 비트 좀 더 쪼개줘'})
 
@@ -267,7 +267,7 @@ def test_command_endpoint_parses_korean_command():
 
 
 def test_command_endpoint_parses_korean_drum_mute_command():
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.post('/api/command', json={'text': '드럼비트 꺼줘'})
 
@@ -279,7 +279,7 @@ def test_command_endpoint_parses_korean_drum_mute_command():
 
 
 def test_command_endpoint_returns_422_for_unsupported_command():
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.post('/api/command', json={'text': '우주 느낌으로 알아서 다 해줘'})
 
@@ -288,7 +288,7 @@ def test_command_endpoint_returns_422_for_unsupported_command():
 
 
 def test_tone_knowledge_search_endpoint_returns_retrieved_docs():
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.get('/api/tone-knowledge/search', params={'q': '드랍 전에 스터터 게이트 딜레이', 'limit': 2})
 
@@ -300,7 +300,7 @@ def test_tone_knowledge_search_endpoint_returns_retrieved_docs():
 
 
 def test_arrange_endpoint_returns_declarative_plan_not_generated_js():
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
 
     response = client.post('/api/llm/arrange', json={'text': '다음 파트 전에 좀 들어올리고 딜레이로 넘겨줘'})
 
@@ -311,3 +311,90 @@ def test_arrange_endpoint_returns_declarative_plan_not_generated_js():
     assert payload['plan']['timing'] == 'next_phrase'
     assert payload['plan']['patches'][0]['target'] == 'fx'
     assert 'noise-fx-gestures' in payload['plan']['knowledge_entry_ids']
+
+
+def test_stt_body_limit_rejects_declared_oversize(monkeypatch):
+    import live_loop.api as api
+
+    monkeypatch.setattr(api, 'MAX_STT_UPLOAD_BYTES', 4)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
+    response = client.post('/api/stt/transcribe', content=b'12345', headers={'content-type': 'multipart/form-data; boundary=x'})
+    assert response.status_code == 413
+
+
+def test_stt_body_limit_rejects_chunked_oversize(monkeypatch):
+    import live_loop.api as api
+
+    monkeypatch.setattr(api, 'MAX_STT_UPLOAD_BYTES', 4)
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
+    response = client.post('/api/stt/transcribe', content=iter([b'12', b'345']), headers={'content-type': 'multipart/form-data; boundary=x'})
+    assert response.status_code == 413
+
+
+def test_api_rejects_untrusted_local_origin():
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
+    response = client.get('/api/health', headers={'host': '127.0.0.1:8101', 'origin': 'https://evil.example'})
+    assert response.status_code == 403
+
+
+def test_remote_api_requires_operator_token(monkeypatch):
+    monkeypatch.setenv('LIVE_LOOP_API_TOKEN', 'test-only-token')
+    client = TestClient(app, base_url="http://127.0.0.1:8101", client=("127.0.0.1", 50000))
+    denied = client.get('/api/health', headers={'host': 'loop.example'})
+    allowed = client.get('/api/health', headers={'host': 'loop.example', 'authorization': 'Bearer test-only-token'})
+    assert denied.status_code == 403
+    assert allowed.status_code == 200
+
+
+def test_stt_stream_limit_cleans_partial_temp_file(monkeypatch, tmp_path):
+    import io
+    import tempfile
+    import live_loop.local_stt as local_stt
+
+    monkeypatch.setattr(local_stt, 'MAX_STT_UPLOAD_BYTES', 4)
+    monkeypatch.setattr(tempfile, 'tempdir', str(tmp_path))
+    transcriber = LocalSpeechTranscriber()
+    try:
+        transcriber.transcribe_upload(io.BytesIO(b'12345'))
+        raise AssertionError('expected upload limit failure')
+    except ValueError as exc:
+        assert 'too large' in str(exc)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_stt_stream_time_limit_cleans_partial_temp_file(monkeypatch, tmp_path):
+    import io
+    import tempfile
+    import live_loop.local_stt as local_stt
+
+    monkeypatch.setattr(local_stt, 'MAX_STT_UPLOAD_SECONDS', 0.5)
+    ticks = iter([0.0, 1.0])
+    monkeypatch.setattr(local_stt.time, 'monotonic', lambda: next(ticks))
+    monkeypatch.setattr(tempfile, 'tempdir', str(tmp_path))
+    transcriber = LocalSpeechTranscriber()
+    try:
+        transcriber.transcribe_upload(io.BytesIO(b'audio'))
+        raise AssertionError('expected upload timeout')
+    except TimeoutError as exc:
+        assert 'too long' in str(exc)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_remote_client_cannot_spoof_localhost_host_without_token(monkeypatch):
+    monkeypatch.delenv('LIVE_LOOP_API_TOKEN', raising=False)
+    client = TestClient(app, base_url='http://localhost:8101', client=('203.0.113.25', 50000))
+
+    response = client.get('/api/health', headers={'host': 'localhost:8101'})
+
+    assert response.status_code == 403
+
+
+def test_remote_client_localhost_host_requires_token(monkeypatch):
+    monkeypatch.setenv('LIVE_LOOP_API_TOKEN', 'test-only-token')
+    client = TestClient(app, base_url='http://localhost:8101', client=('203.0.113.25', 50000))
+
+    denied = client.get('/api/health', headers={'host': 'localhost:8101'})
+    allowed = client.get('/api/health', headers={'host': 'localhost:8101', 'authorization': 'Bearer test-only-token'})
+
+    assert denied.status_code == 403
+    assert allowed.status_code == 200

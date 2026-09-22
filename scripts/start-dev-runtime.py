@@ -103,7 +103,7 @@ def start_backend() -> ManagedProcess | None:
     return ManagedProcess("backend", process)
 
 
-def start_frontend() -> ManagedProcess | None:
+def start_frontend(host: str = "127.0.0.1") -> ManagedProcess | None:
     if port_open(FRONTEND_PORT, host="127.0.0.1"):
         print(f"[reuse] frontend already listening on {FRONTEND_URL}")
         return None
@@ -114,9 +114,9 @@ def start_frontend() -> ManagedProcess | None:
     env.setdefault("VITE_LIVE_LOOP_STT_TIMEOUT_MS", "60000")
     env.setdefault("VITE_LIVE_LOOP_BACKEND_TIMEOUT_MS", "1200")
     env.setdefault("VITE_LIVE_LOOP_LLM_TIMEOUT_MS", "6000")
-    print("[start] frontend: npm run dev -- --host 0.0.0.0")
+    print(f"[start] frontend: npm run dev -- --host {host}")
     process = subprocess.Popen(
-        ["npm", "run", "dev", "--", "--host", "0.0.0.0"],
+        ["npm", "run", "dev", "--", "--host", host],
         cwd=FRONTEND,
         env=env,
         text=True,
@@ -205,6 +205,7 @@ def main() -> int:
     parser.add_argument("--check-only", action="store_true", help="Do not start missing servers; only verify readiness")
     parser.add_argument("--prewarm", action="store_true", help="Prewarm LLM and STT after health checks")
     parser.add_argument("--no-wait", action="store_true", help="Exit after readiness instead of keeping started processes attached")
+    parser.add_argument("--lan", action="store_true", help="Expose only the Vite development frontend on the LAN")
     args = parser.parse_args()
 
     processes: list[ManagedProcess] = []
@@ -215,7 +216,7 @@ def main() -> int:
             if not port_open(FRONTEND_PORT):
                 raise RuntimeError(f"frontend is not listening on {FRONTEND_URL}")
         else:
-            for managed in [start_backend(), start_frontend()]:
+            for managed in [start_backend(), start_frontend("0.0.0.0" if args.lan else "127.0.0.1")]:
                 if managed:
                     processes.append(managed)
 

@@ -14,6 +14,8 @@ DEFAULT_STT_LANGUAGE = "ko"
 DEFAULT_STT_DEVICE = "cpu"
 DEFAULT_STT_COMPUTE_TYPE = "int8"
 DEFAULT_STT_BEAM_SIZE = 5
+MAX_STT_UPLOAD_BYTES = int(os.getenv("LIVE_LOOP_MAX_STT_UPLOAD_BYTES", str(16 * 1024 * 1024)))
+MAX_STT_UPLOAD_SECONDS = float(os.getenv("LIVE_LOOP_MAX_STT_UPLOAD_SECONDS", "15"))
 DEFAULT_STT_INITIAL_PROMPT = (
     "라이브 루프스테이션 한국어 짧은 음성 명령. "
     "가능한 명령: 킥 깔아줘, 하이햇 얹어줘, 베이스 넣어줘, 패드 넓게 깔아줘, "
@@ -197,13 +199,23 @@ class LocalSpeechTranscriber:
 
     def transcribe_upload(self, file: BinaryIO, *, suffix: str = ".webm", language: str | None = None) -> SttTranscript:
         suffix = suffix if suffix.startswith(".") else f".{suffix}"
-        with tempfile.NamedTemporaryFile(prefix="live-loop-stt-", suffix=suffix, delete=False) as tmp:
-            tmp.write(file.read())
-            tmp_path = Path(tmp.name)
+        started = time.monotonic()
+        written = 0
+        tmp_path: Path | None = None
         try:
+            with tempfile.NamedTemporaryFile(prefix="live-loop-stt-", suffix=suffix, delete=False) as tmp:
+                tmp_path = Path(tmp.name)
+                while chunk := file.read(1024 * 1024):
+                    written += len(chunk)
+                    if written > MAX_STT_UPLOAD_BYTES:
+                        raise ValueError("audio upload is too large")
+                    if time.monotonic() - started > MAX_STT_UPLOAD_SECONDS:
+                        raise TimeoutError("audio upload took too long")
+                    tmp.write(chunk)
             return self.transcribe_file(tmp_path, language=language)
         finally:
-            tmp_path.unlink(missing_ok=True)
+            if tmp_path is not None:
+                tmp_path.unlink(missing_ok=True)
 
 
 @lru_cache(maxsize=1)

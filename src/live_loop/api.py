@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import ipaddress
 from functools import lru_cache
+import os
+import secrets
 from time import perf_counter
 
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .actions import MusicAction, parse_fast_command
@@ -74,7 +78,78 @@ class SttTranscriptResponse(BaseModel):
     source: str = "faster-whisper"
 
 
+MAX_STT_UPLOAD_BYTES = int(os.getenv("LIVE_LOOP_MAX_STT_UPLOAD_BYTES", str(16 * 1024 * 1024)))
+LOCAL_HOSTS = {"127.0.0.1", "localhost", "[::1]", "::1"}
+LOCAL_FRONTEND_ORIGINS = {"http://127.0.0.1:5173", "http://localhost:5173"}
+
+
+def _host_name(headers: dict[bytes, bytes]) -> str:
+    raw = headers.get(b"host", b"").decode("latin-1").strip().lower()
+    if raw.startswith("["):
+        return raw.split("]", 1)[0] + "]"
+    return raw.rsplit(":", 1)[0] if ":" in raw else raw
+
+
+class ApiAccessBoundaryMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        headers = {key.lower(): value for key, value in scope.get("headers", [])}
+        host = _host_name(headers)
+        origin = headers.get(b"origin", b"").decode("latin-1").rstrip("/")
+        if host in LOCAL_HOSTS and _is_loopback_client(scope):
+            if origin and origin not in LOCAL_FRONTEND_ORIGINS:
+                await JSONResponse(status_code=403, content={"detail": "untrusted request origin"})(scope, receive, send)
+                return
+        else:
+            expected = os.getenv("LIVE_LOOP_API_TOKEN", "").strip()
+            auth = headers.get(b"authorization", b"").decode("latin-1")
+            scheme, _, supplied = auth.partition(" ")
+            if not expected or scheme.lower() != "bearer" or not secrets.compare_digest(supplied.strip(), expected):
+                await JSONResponse(status_code=403, content={"detail": "remote API access requires an operator token"})(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+class SttBodyLimitMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or scope.get("path") != "/api/stt/transcribe" or scope.get("method") != "POST":
+            await self.app(scope, receive, send)
+            return
+        headers = {key.lower(): value for key, value in scope.get("headers", [])}
+        try:
+            declared = int(headers.get(b"content-length", b"0"))
+        except ValueError:
+            declared = 0
+        if declared > MAX_STT_UPLOAD_BYTES:
+            await JSONResponse(status_code=413, content={"detail": "audio upload is too large"})(scope, receive, send)
+            return
+        messages = []
+        received = 0
+        while True:
+            message = await receive()
+            received += len(message.get("body", b"")) if message.get("type") == "http.request" else 0
+            if received > MAX_STT_UPLOAD_BYTES:
+                await JSONResponse(status_code=413, content={"detail": "audio upload is too large"})(scope, receive, send)
+                return
+            messages.append(message)
+            if message.get("type") != "http.request" or not message.get("more_body", False):
+                break
+        async def replay_receive():
+            return messages.pop(0) if messages else {"type": "http.request", "body": b"", "more_body": False}
+        await self.app(scope, replay_receive, send)
+
+
 app = FastAPI(title="live-loop API", version="0.1.0")
+app.add_middleware(SttBodyLimitMiddleware)
+app.add_middleware(ApiAccessBoundaryMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
@@ -161,3 +236,12 @@ def prewarm_llm(prompt: str = "킥 깔아줘") -> LlmPrewarmResponse:
         return LlmPrewarmResponse(ok=False, ready=True, source="local-gguf", latency_ms=latency_ms, message=str(exc))
     latency_ms = round((perf_counter() - start) * 1000)
     return LlmPrewarmResponse(ok=True, ready=True, source="local-gguf", latency_ms=latency_ms)
+
+def _is_loopback_client(scope) -> bool:
+    client = scope.get("client")
+    if not client or not client[0]:
+        return False
+    try:
+        return ipaddress.ip_address(str(client[0]).split("%", 1)[0]).is_loopback
+    except ValueError:
+        return False
