@@ -8,6 +8,10 @@ The core project is intended to remain free. If it becomes useful in your music,
 
 Current direction: GUI/Tone.js-first. Sonic Pi remains an optional OSC prototype adapter, but the main product path is a fullscreen browser/desktop instrument with local audio, visualizer, push-to-talk STT, and local GGUF intent parsing.
 
+## Verification boundary (2026-09-23)
+
+This remains a local-first instrument prototype. Earlier local checks recorded 24 selected backend/API security tests and 86 frontend tests passing, plus frontend lint/build. This documentation update did not rerun those checks or exercise microphone input, STT/LLM models, GPU, audio output or a live performance. See [SECURITY.md](SECURITY.md) for the unresolved trusted-local-cache advisory.
+
 ## Project principles
 
 - Local-first: microphone/STT/LLM workflows should work locally where practical.
@@ -52,10 +56,23 @@ This instrument is free because musical tools should be hackable, local, and acc
 If live-loop helps your music, performance, teaching, or research, please consider sponsoring development.
 ```
 
+## Install for development
+
+Use Python 3.12+, `uv`, and a supported Node.js LTS environment. From your clone of this repository:
+
+```bash
+uv sync
+cd frontend
+npm ci
+cd ..
+```
+
+Native model dependencies may need platform-specific build tools. These installation instructions were checked against the project manifests, not executed as an end-to-end setup during this documentation update. Benchmark and `--prewarm` commands below load/invoke real models; they are not offline source checks.
+
 ## Quick health check
 
 ```bash
-cd E:\workspace\live-loop
+cd /path/to/live-loop
 uv run live-loop doctor
 uv run live-loop doctor --json
 ```
@@ -70,7 +87,7 @@ The doctor command reports:
 Measure local GGUF cold/warm command latency before changing frontend timeouts:
 
 ```bash
-cd E:\workspace\live-loop
+cd /path/to/live-loop
 uv run live-loop benchmark-llm
 uv run live-loop benchmark-llm --json
 uv run live-loop benchmark-llm --prompt "킥 깔아줘" --prompt "하이햇 셔플로 얹어줘"
@@ -85,18 +102,18 @@ If local LLM mode is enabled in the frontend, call `/api/llm/prewarm` after back
 Start or verify the local performance stack with one command:
 
 ```bash
-cd E:\workspace\live-loop
-scripts/start-dev-runtime.py --prewarm
+cd /path/to/live-loop
+uv run python scripts/start-dev-runtime.py --prewarm
 ```
 
 Useful modes:
 
 ```bash
 # Verify already-running backend/frontend and prewarm local AI paths.
-scripts/start-dev-runtime.py --check-only --prewarm
+uv run python scripts/start-dev-runtime.py --check-only --prewarm
 
 # Start missing servers, verify readiness, then exit instead of staying attached.
-scripts/start-dev-runtime.py --no-wait
+uv run python scripts/start-dev-runtime.py --no-wait
 ```
 
 The launcher checks backend `8101`, frontend `5173`, `/api/health`, `/api/stt/status`, `/api/model/status`, and frontend `/`. It also points to `docs/qa/golden-performance-flow.md` for manual QA.
@@ -106,7 +123,7 @@ The launcher checks backend `8101`, frontend `5173`, `/api/health`, `/api/stt/st
 Run only the API:
 
 ```bash
-cd E:\workspace\live-loop
+cd /path/to/live-loop
 uv run live-loop-api
 ```
 
@@ -131,7 +148,7 @@ curl -sS -X POST http://127.0.0.1:8101/api/llm/intent \
 ## Frontend development
 
 ```bash
-cd E:\workspace\live-loop/frontend
+cd /path/to/live-loop/frontend
 npm run dev
 ```
 
@@ -161,7 +178,7 @@ Performance controls:
 Run all current checks:
 
 ```bash
-cd E:\workspace\live-loop
+cd /path/to/live-loop
 uv run pytest -q
 uv run ruff check .
 cd frontend
@@ -214,3 +231,7 @@ Current product path:
 ## Architectural decision
 
 Do not fork Sonic Pi to embed STT/LLM. STT, LLM, command interpretation, state, and safety checks live in `live-loop`. Sonic Pi can remain an optional out-of-process adapter through OSC. See `docs/adr-0001-sonic-pi-integration-boundary.md`.
+
+## Automated verification (2026-09-23)
+
+No GitHub Actions workflows or runs are configured/recorded. The local test/build records above are not a remote CI pass.
