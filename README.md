@@ -170,13 +170,11 @@ npm run lint
 npm run build
 ```
 
-Expected current status:
+Check criteria and limitations:
 
-- Python tests pass.
-- Ruff passes.
-- Frontend tests pass.
-- Frontend lint/build pass.
-- Vite may warn that the production JS chunk is large because visualizer dependencies are bundled eagerly; this is a known optimization target.
+- Treat passing Python, frontend test, lint, and build commands as environment-specific verification, not proof that microphone, STT, LLM, or audio output will work on a performance machine.
+- The repository does not include STT or GGUF model files. Install compatible local models separately and use `live-loop doctor` before a session.
+- Vite may warn that the production JS chunk is large because visualizer dependencies are bundled eagerly; this remains an optimization target.
 
 ## Model/runtime notes
 
